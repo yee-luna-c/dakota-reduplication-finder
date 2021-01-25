@@ -13,9 +13,9 @@ DakRule = lambda name, alternations, context, optional=False: SPERule(name, alte
                                                                           consonant_inventory=consonant_inventory,
                                                                           optional=optional)
 phon_rules = [
-    DakRule('CCC Simplification', [(cons, '') for cons in consonant_inventory.strip('[]')], r'_{-}{C}{C}'),
+    DakRule('CCC Simplification', [(cons, '') for cons in consonant_inventory.strip('[]')], r'_\+{C}{C}'),
     DakRule('Coronal Dissimilation', [('t', 'k'), ('c', 'k'), ('j', 'g'), ('d', 'g')], r'_{-}[tdcjsz]'),
-    DakRule('Degemination', [(cons, '') for cons in consonant_inventory.strip('[]')], r'_{-}{!}'),
+    DakRule('Degemination', [(cons, '') for cons in consonant_inventory.strip('[]')], r'_\+{!}'),
     # don't need Deasp/Deglot since we're ignoring diacritics
     DakRule('Voicing Assimilation', [('t', 'd'), ('p', 'b'), ('k', 'g'), ('c', 'j')],
             r'_{-}[wydbzgjnm]'),
