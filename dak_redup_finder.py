@@ -35,7 +35,7 @@ class DakRedupFinder:
             print(f'Spreadsheet of cases written to "{self.outfile}".')
 
     def write_cases_to_outfile(self, cases):
-        with open(self.outfile, 'w', newline='') as csvfile:
+        with open(self.outfile, 'w', newline='', encoding='utf8') as csvfile:
             writer = csv.DictWriter(csvfile, list(self.outfields.values()))
             writer.writerows(cases)
 
