@@ -58,7 +58,7 @@ class DakRedupFinder:
         return cases
 
     def eval_utterance(self, utterance):
-        ascii_utterance = self.strip_diacritics(utterance).lower()  # we don't need the diacritics for this
+        ascii_utterance = self.strip_diacritics(utterance.lower())  # we don't need the diacritics for this
         words = re.split(r'\W+', ascii_utterance)
         cases = []
         for word in words:
@@ -101,19 +101,26 @@ class DakRedupFinder:
         """
         :author: hexaJer @ https://stackoverflow.com/questions/517923/what-is-the-best-way-to-remove-accents-normalize-in-a-python-unicode-string
 
-        Strip non-ascii items from input String.
+        Strip diacritics from input String, converting nasals to upper when found to retain contrast.
 
         :param text: The input string.
         :returns: The processed String.
         """
-        try:
-            text = text.decode('utf-8')
-        except (TypeError, NameError, AttributeError):  # unicode is a default on python 3
-            pass
+        text = self.nasals_to_upper(text)
         text = unicodedata.normalize('NFD', text)
         text = text.encode('ascii', 'ignore')
         text = text.decode("utf-8")
         return str(text)
+
+    def nasals_to_upper(self, text):
+        """
+        Converts all nasals (Vƞ) to uppercase of the original character, to signify nasality, since we’ll be stripping
+        unicode but want to keep this distinction.
+        TODO: not great that this is hard-coded
+        :param text:
+        :return:
+        """
+        return text.replace('aƞ', 'A').replace('eƞ', 'E').replace('iƞ', 'I').replace('oƞ', 'O').replace('uƞ', 'U')
 
 
 if __name__ == '__main__':
