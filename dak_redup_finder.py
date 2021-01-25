@@ -27,37 +27,40 @@ class DakRedupFinder:
         self.verbose = verbose
 
     def run(self):
-        candidates = self.find_redup_candidates()
-        if self.verbose: print(f'\nFound {len(candidates)} reduplication candidates.')
-        self.write_candidates_to_outfile(candidates)
-        if self.verbose: print(f'Spreadsheet of candidates written to "{self.outfile}".')
+        cases = self.find_redup_cases()
+        if self.verbose: print(f'\nFound {len(candidates)} cases of reduplication.')
+        self.write_cases_to_outfile(candidates)
+        if self.verbose: print(f'Spreadsheet of cases written to "{self.outfile}".')
 
-    def write_candidates_to_outfile(self, candidates):
+    def write_cases_to_outfile(self, cases):
         with open(self.outfile, 'w', newline='') as csvfile:
             writer = csv.DictWriter(csvfile, list(self.outfields.values()))
-            writer.writerows(candidates)
+            writer.writerows(cases)
 
-    def find_redup_candidates(self):
-        candidates = []
-        with open(self.infile, newline='') as csvfile:
+    def find_redup_cases(self):
+        cases = []
+        with open(self.infile, newline='', encoding='utf8') as csvfile:
             reader = csv.DictReader(csvfile)  # TODO: allow inputs without header; have option to read in from vals here
             for row in reader:
-                row_candidates = self.eval_utterance(row[self.infields['utterance']])
-                for candidate in row_candidates:
-                    if candidate is not None:
-                        candidate[self.outfields['row']] = self.row_num
-                        candidate[self.outfields['translation']] = row[self.infields['translation']]
-                        candidates.append(candidate)
+                if verbose and self.row_num % 100 == 1:
+                    print(f'Processed {self.row_num-1} rows, found {len(cases)} cases so far.')
+                row_cases = self.eval_utterance(row[self.infields['utterance']])
+                for case in row_cases:
+                    if case is not None:
+                        case[self.outfields['row']] = self.row_num
+                        case[self.outfields['translation']] = row[self.infields['translation']]
+                        cases.append(case)
 
                 self.row_num += 1
 
-        return candidates
+        return cases
 
     def eval_utterance(self, utterance):
-        words = re.split(r'\W+', utterance)
+        ascii_utterance = self.strip_diacritics(utterance).lower()
+        words = re.split(r'\W+', ascii_utterance)
         candidates = []
         for word in words:
-            candidate = self.eval_word(self.strip_diacritics(word).lower())  # we don't need the diacritics for this
+            candidate = self.eval_word(word)  # we don't need the diacritics for this
             if candidate is None: continue
             candidate[self.outfields['utterance']] = utterance
             candidate[self.outfields['word']] = word
@@ -97,7 +100,7 @@ class DakRedupFinder:
         """
         try:
             text = text.decode('utf-8')
-        except (TypeError, NameError):  # unicode is a default on python 3
+        except (TypeError, NameError, AttributeError):  # unicode is a default on python 3
             pass
         text = unicodedata.normalize('NFD', text)
         text = text.encode('ascii', 'ignore')
