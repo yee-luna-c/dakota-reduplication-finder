@@ -1,8 +1,8 @@
 import re
 import itertools
 
-class SPERule:
 
+class SPERule:
     def __init__(self, name, alternations, context,
                  vowel_inventory=r'[aeiou]',
                  consonant_inventory=r'[qwrtypsdfghjklzxcvbnm]',

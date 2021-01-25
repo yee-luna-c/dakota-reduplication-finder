@@ -1,5 +1,5 @@
 import re
-from spe import SPERule
+from spetools.spe import SPERule
 
 class RedupVerifier:
 

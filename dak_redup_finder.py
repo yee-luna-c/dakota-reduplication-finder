@@ -2,39 +2,33 @@ import csv
 import unicodedata
 import re
 import sys
-from syllabifier import Syllabifier
+
+from langdata import dakota
+from spetools.syllabifier import Syllabifier
 from redup_verifier import RedupVerifier
-from spe import SPERule
+
 
 class DakRedupFinder:
-    syllable_structures = ['CV', 'CVC', 'V', 'VC', 'CCV', 'CCVC']
-    vowel_inventory = r'[aeiou]' # NOTE: also below in DakRule, due to restrictions
-    consonant_inventory = r'[wytdpbszkhgcjnm]' # NOTE: also below in DakRule, due to restrictions
-    DakRule = lambda name, alternations, context, optional=False: SPERule(name, alternations, context,
-                                                                          vowel_inventory=r'[aeiou]',
-                                                                          consonant_inventory=r'[wytdpbszkhgcjnm]',
-                                                                          optional=optional)
-    phon_rules = [
-        DakRule('CCC Simplification', [(cons, '') for cons in consonant_inventory.strip('[]')], r'_{-}{C}{C}'),
-        DakRule('Coronal Dissimilation', [('t', 'k'), ('c', 'k'), ('j', 'g'), ('d', 'g')], r'_{-}[tdcjsz]'),
-        DakRule('Degemination', [(cons, '') for cons in consonant_inventory.strip('[]')], r'_{-}{!}'),
-        # don't need Deasp/Deglot since we're ignoring diacritics
-        DakRule('Voicing Assimilation', [('t', 'd'), ('p', 'b'), ('k', 'g'), ('c', 'j')],
-                r'_{-}[wydbzgjnm]'),
-        DakRule('Fricative Devoicing', [('z', 's'), ('g', 'h')], r'_\+'),
-        DakRule('Velar Palatization', [('k', 'c'), ('g', 'j')], r'i{-}?_'),
-        DakRule('Velar Palatization (overapplied)', [('k', 'c'), ('g', 'j')], r'c{^-}*\+_', optional=True)
-    ]
-    output_fieldnames = ['Row', 'Dakota word', 'Syllabification', 'Dakota utterance', 'English translation']
+    input_fieldnames = {
+
+    }
+    output_fieldnames = {
+        'row': 'Row',
+        'word': 'Dakota word',
+        'syllab': 'Syllabification',
+        'gloss': 'English gloss',
+        'utterance': 'Dakota utterance',
+        'translation': 'English translation'
+    }
 
     def __init__(self, source_file, output_file, verbose=False):
         self.source_file = source_file
         self.output_file = output_file
         self.verbose = verbose
-        self.syllabifier = Syllabifier(DakRedupFinder.syllable_structures,
-                                       DakRedupFinder.vowel_inventory,
-                                       DakRedupFinder.consonant_inventory)
-        self.redup_verifier = RedupVerifier(DakRedupFinder.phon_rules)
+        self.syllabifier = Syllabifier(dakota.syllable_structures,
+                                       dakota.vowel_inventory,
+                                       dakota.consonant_inventory)
+        self.redup_verifier = RedupVerifier(dakota.phon_rules)
         self.row_num = 1
 
     def run(self):
@@ -45,9 +39,8 @@ class DakRedupFinder:
 
     def write_candidates_to_outfile(self, candidates):
         with open(self.output_file, 'w', newline='') as csvfile:
-            writer = csv.DictWriter(csvfile, DakRedupFinder.output_fieldnames)
+            writer = csv.DictWriter(csvfile, list(DakRedupFinder.output_fieldnames.values()))
             writer.writerows(candidates)
-
 
     def find_redup_candidates(self):
         self.row_num = 2  # TODO: assume we start at the second line (first is headers)
@@ -58,7 +51,7 @@ class DakRedupFinder:
                 row_candidates = self.eval_utterance(row['Dakota'])
                 for candidate in row_candidates:
                     if candidate is not None:
-                        candidate['Row'] = self.row_num
+                        candidate[DakRedupFinder.rule_name('row')] = self.row_num
                         candidate['English translation'] = row['English']
                         candidates.append(candidate)
 
