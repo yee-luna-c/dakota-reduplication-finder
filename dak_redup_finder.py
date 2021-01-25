@@ -6,7 +6,7 @@ import json
 
 from langdata import dakota
 from spetools.syllabifier import Syllabifier
-from redup_verifier import RedupVerifier
+from spetools.reduplicator import RedupVerifier
 
 
 class DakRedupFinder:
