@@ -22,7 +22,6 @@ class Syllabifier:
         syllabs = []
         partitions = [self.match_syll(word, struct) for struct in self.syll_structs]
         for this_syll, remainder in partitions:
-            print(this_syll, remainder)
             if this_syll is None: continue # match_struct did not find a matching syllable
             if len(remainder) == 0: syllabs += [this_syll] # syllable is end of word
             else: syllabs += [(this_syll + '-' + syllab) for syllab in self.syllabify(remainder)]
