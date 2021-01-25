@@ -2,6 +2,7 @@ import csv
 import unicodedata
 import re
 import sys
+import json
 
 from langdata import dakota
 from spetools.syllabifier import Syllabifier
@@ -9,50 +10,43 @@ from redup_verifier import RedupVerifier
 
 
 class DakRedupFinder:
-    input_fieldnames = {
+    
+    def __init__(self, config, verbose=False):
+        with open(config) as jsonfile:
+            cfg = json.load(jsonfile)
+        self.infile = cfg['input_file']
+        self.outfile = cfg['output_file']
+        self.infields = cfg['input_field_mapping']
+        self.outfields = cfg['output_field_mapping']
+        self.row_num = 2 if cfg['input_has_header'] else 1  # 1-indexed for readability
 
-    }
-    output_fieldnames = {
-        'row': 'Row',
-        'word': 'Dakota word',
-        'syllab': 'Syllabification',
-        'gloss': 'English gloss',
-        'utterance': 'Dakota utterance',
-        'translation': 'English translation'
-    }
-
-    def __init__(self, source_file, output_file, verbose=False):
-        self.source_file = source_file
-        self.output_file = output_file
-        self.verbose = verbose
         self.syllabifier = Syllabifier(dakota.syllable_structures,
                                        dakota.vowel_inventory,
                                        dakota.consonant_inventory)
         self.redup_verifier = RedupVerifier(dakota.phon_rules)
-        self.row_num = 1
+        self.verbose = verbose
 
     def run(self):
         candidates = self.find_redup_candidates()
         if self.verbose: print(f'\nFound {len(candidates)} reduplication candidates.')
         self.write_candidates_to_outfile(candidates)
-        if self.verbose: print(f'Spreadsheet of candidates written to {self.output_file}.')
+        if self.verbose: print(f'Spreadsheet of candidates written to "{self.outfile}".')
 
     def write_candidates_to_outfile(self, candidates):
-        with open(self.output_file, 'w', newline='') as csvfile:
-            writer = csv.DictWriter(csvfile, list(DakRedupFinder.output_fieldnames.values()))
+        with open(self.outfile, 'w', newline='') as csvfile:
+            writer = csv.DictWriter(csvfile, list(self.outfields.values()))
             writer.writerows(candidates)
 
     def find_redup_candidates(self):
-        self.row_num = 2  # TODO: assume we start at the second line (first is headers)
         candidates = []
-        with open(self.source_file, newline='') as csvfile:
-            reader = csv.DictReader(csvfile)
+        with open(self.infile, newline='') as csvfile:
+            reader = csv.DictReader(csvfile)  # TODO: allow inputs without header; have option to read in from vals here
             for row in reader:
-                row_candidates = self.eval_utterance(row['Dakota'])
+                row_candidates = self.eval_utterance(row[self.infields['utterance']])
                 for candidate in row_candidates:
                     if candidate is not None:
-                        candidate[DakRedupFinder.rule_name('row')] = self.row_num
-                        candidate['English translation'] = row['English']
+                        candidate[self.outfields['row']] = self.row_num
+                        candidate[self.outfields['translation']] = row[self.infields['translation']]
                         candidates.append(candidate)
 
                 self.row_num += 1
@@ -63,10 +57,10 @@ class DakRedupFinder:
         words = re.split(r'\W+', utterance)
         candidates = []
         for word in words:
-            candidate = self.eval_word(self.strip_diacritics(word).lower()) # we don't need the diacritics for this
+            candidate = self.eval_word(self.strip_diacritics(word).lower())  # we don't need the diacritics for this
             if candidate is None: continue
-            candidate['Dakota utterance'] = utterance
-            candidate['Dakota word'] = word
+            candidate[self.outfields['utterance']] = utterance
+            candidate[self.outfields['word']] = word
 
             candidates.append(candidate)
 
@@ -78,7 +72,7 @@ class DakRedupFinder:
 
         for syllab in syllabs:
             is_candidate = self.contains_redup(syllab)
-            if is_candidate: return {'Syllabification': syllab}  # only return one valid syllab for each word
+            if is_candidate: return {self.outfields['syllab']: syllab}  # only return one valid syllab for each word
 
         return None
 
@@ -92,7 +86,6 @@ class DakRedupFinder:
             return None
         return syllabs
 
-
     def strip_diacritics(self, text):
         """
         :author: hexaJer @ https://stackoverflow.com/questions/517923/what-is-the-best-way-to-remove-accents-normalize-in-a-python-unicode-string
@@ -100,10 +93,7 @@ class DakRedupFinder:
         Strip non-ascii items from input String.
 
         :param text: The input string.
-        :type text: String
-
         :returns: The processed String.
-        :rtype: String
         """
         try:
             text = text.decode('utf-8')
@@ -115,13 +105,12 @@ class DakRedupFinder:
         return str(text)
 
 
-
 if __name__ == '__main__':
-    if len(sys.argv) < 3:
-        print(f'Expected 2 or 3 arguments, got {len(sys.argv)-1}.')
-        print('Usage: python dak_redup_finder source_file output_file (verbose)')
+    if len(sys.argv) < 2:
+        print(f'Expected 1 or 2 arguments, got {len(sys.argv)-1}.')
+        print('Usage: python dak_redup_finder config_file (verbose)')
         exit(1)
 
-    verbose = sys.argv[3] if len(sys.argv) >= 4 else False
-    drf = DakRedupFinder(sys.argv[1], sys.argv[2], verbose)
+    verbose = sys.argv[2] if len(sys.argv) >= 3 else False
+    drf = DakRedupFinder(sys.argv[1], verbose)
     drf.run()
