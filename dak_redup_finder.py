@@ -28,9 +28,11 @@ class DakRedupFinder:
 
     def run(self):
         cases = self.find_redup_cases()
-        if self.verbose: print(f'\nFound {len(candidates)} cases of reduplication.')
-        self.write_cases_to_outfile(candidates)
-        if self.verbose: print(f'Spreadsheet of cases written to "{self.outfile}".')
+        if self.verbose:
+            print(f'\nFound {len(cases)} cases of reduplication.')
+        self.write_cases_to_outfile(cases)
+        if self.verbose:
+            print(f'Spreadsheet of cases written to "{self.outfile}".')
 
     def write_cases_to_outfile(self, cases):
         with open(self.outfile, 'w', newline='') as csvfile:
@@ -56,26 +58,31 @@ class DakRedupFinder:
         return cases
 
     def eval_utterance(self, utterance):
-        ascii_utterance = self.strip_diacritics(utterance).lower()
+        ascii_utterance = self.strip_diacritics(utterance).lower()  # we don't need the diacritics for this
         words = re.split(r'\W+', ascii_utterance)
-        candidates = []
+        cases = []
         for word in words:
-            candidate = self.eval_word(word)  # we don't need the diacritics for this
-            if candidate is None: continue
-            candidate[self.outfields['utterance']] = utterance
-            candidate[self.outfields['word']] = word
+            if word == "":
+                continue
+            case = self.eval_word(word)
+            if case is None:
+                continue
+            case[self.outfields['utterance']] = utterance
+            case[self.outfields['word']] = word
 
-            candidates.append(candidate)
+            cases.append(case)
 
-        return candidates
+        return cases
 
     def eval_word(self, word):
         syllabs = self.syllab_word(word)
-        if syllabs is None: return None
+        if syllabs is None:
+            return None
 
         for syllab in syllabs:
-            is_candidate = self.contains_redup(syllab)
-            if is_candidate: return {self.outfields['syllab']: syllab}  # only return one valid syllab for each word
+            is_case = self.contains_redup(syllab)
+            if is_case:
+                return {self.outfields['syllab']: syllab}  # only return one valid syllab for each word
 
         return None
 
@@ -85,7 +92,8 @@ class DakRedupFinder:
     def syllab_word(self, word):
         syllabs = self.syllabifier.syllabify(word)
         if len(syllabs) == 0:
-            if self.verbose: print(f'Unable to syllabify "{word}" from row {self.row_num}, skipping...')
+            if self.verbose:
+                print(f'Unable to syllabify "{word}" from row {self.row_num}, skipping...')
             return None
         return syllabs
 
