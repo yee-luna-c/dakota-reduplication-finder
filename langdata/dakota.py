@@ -44,11 +44,10 @@ def convert_to_ascii(unicode_text):
     :param unicode_text: The unicode input string
     :returns: The corresponding ascii string
     """
-    text = unicode_text.lower()
+    text = unicodedata.normalize('NFD', unicode_text.lower())
 
     text = map_special_segs(text, unicode_to_ascii_mapping)
 
-    text = unicodedata.normalize('NFD', text)
     text = text.encode('ascii', 'ignore')
     text = text.decode("utf-8")
     return str(text)
@@ -67,6 +66,6 @@ def map_special_segs(text, mapping):
     :return:
     """
     for m in mapping.items():
-        text = text.replace(m[0], m[1])
+        text = text.replace(unicodedata.normalize('NFD', m[0]), unicodedata.normalize('NFD', m[1]))
 
     return text
