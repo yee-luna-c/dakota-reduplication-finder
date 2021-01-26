@@ -18,13 +18,15 @@ class Syllabifier:
         self.vowel_inv = vowel_inventory
         self.cons_inv = consonant_inventory
 
-    def syllabify(self, word):
+    def syllabify(self, word, word_bounds=True):
+        word_bound = '#' if word_bounds else ''
         syllabs = []
         partitions = [self.match_syll(word, struct) for struct in self.syll_structs]
         for this_syll, remainder in partitions:
             if this_syll is None: continue # match_struct did not find a matching syllable
-            if len(remainder) == 0: syllabs += [this_syll] # syllable is end of word
-            else: syllabs += [(this_syll + '-' + syllab) for syllab in self.syllabify(remainder)]
+            if len(remainder) == 0: syllabs += [word_bound + this_syll + word_bound] # syllable is end of word
+            else: syllabs += [word_bound + this_syll + '-' + syllab + word_bound
+                              for syllab in self.syllabify(remainder, word_bounds=False)]
 
         return syllabs
 

@@ -12,13 +12,13 @@ class RedupVerifier:
         """
         self.ruleset = rules
 
-    def verify(self, syllab):
+    def verify(self, syllab, unknown_bounds=True):
         """
         Check if rules allow any two adjacent syllables in syllab to become identical
         :param syllab: The reduplication candidate as a syllabified word
         :return: True if rules allow for two adjacent syllables to become identical; False otherwise
         """
-        candidate_syllabs = self.set_redup_bounds(syllab)
+        candidate_syllabs = self.set_redup_bounds(syllab) if unknown_bounds else [syllab]
         for candidate_syllab in candidate_syllabs:
             if self.has_redup_orig_form(candidate_syllab):
                 return True
@@ -67,13 +67,12 @@ class RedupVerifier:
 
     def has_redup(self, candidate_syllab):
         """
-        Checks a candidate syllabification for equality of R0 and R1, assuming one '+' boundary between the two (and
-        generic ('-') boundaries elsewhere)
+        Checks a candidate syllabification for equality of R0 and R1, assuming one '+' boundary between the two .
         :param candidate_syllab:
         :return: True if R0 == R1; False otherwise
         """
         partition = candidate_syllab.split('+', 1)  # assume only 1 redup boundary, by above methods
-        r0 = partition[0].split('-')[-1]
-        r1 = partition[1].split('-')[0]
+        r0 = re.split(r'[-=#%]', partition[0])[-1]
+        r1 = re.split(r'[-=#%]', partition[1])[0]
 
         return r0 == r1

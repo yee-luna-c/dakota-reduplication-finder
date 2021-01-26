@@ -22,7 +22,8 @@ phon_rules = [
     DakRule('Voicing Assimilation', [('t', 'd'), ('p', 'b'), ('k', 'g')], r'_{-}[wydbzgGjnm]'),
     DakRule('Fricative Devoicing', [('z', 's'), ('G', 'H')], r'_\+'),
     DakRule('Velar Palatization', [('k', 'c'), ('g', 'c')], r'i{-}?_'),  # second alter?
-    DakRule('Velar Palatization (overapplied)', [('k', 'c'), ('g', 'c')], r'c{^-}*\+_', optional=True)  # second alter?
+    DakRule('Velar Palatization (overapplied)', [('k', 'c'), ('g', 'c')], r'c{^-}*\+_', optional=True),  # second alter?
+    DakRule('Ablaut', [('a', 'e'), ('A', 'E')], r'_[-=#%]', optional=True)
 ]
 
 unicode_to_ascii_mapping = {
